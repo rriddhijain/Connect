@@ -32,7 +32,6 @@ This simulator models synthetic users sharing a single bottleneck link and compa
   - Real-time dynamic traces: Instantaneous throughput and aggregate queue depth over time
 - **QoS & Traffic Class Deep-Dive**: Breakdown by application type (Voice, Video, Web, File Download).
 - **Per-User Inspection**: Drill down into individual synthetic user statistics.
-- **CSV & Config JSON Export**: Download aggregate summaries, per-user metrics, and simulation configuration.
 
 ---
 
@@ -41,7 +40,7 @@ This simulator models synthetic users sharing a single bottleneck link and compa
 ```text
 Connect/
 ├── app.py                      # Interactive Streamlit dashboard
-├── README.md                   # Comprehensive documentation and viva guide
+├── README.md                   # Comprehensive project documentation
 ├── requirements.txt            # Python dependencies
 ├── src/
 │   ├── __init__.py
@@ -118,24 +117,6 @@ Then open your web browser at `http://localhost:8501`.
 | **95th Percentile Latency** | 95th percentile of delivered packet latency | Tail latency indicator for jitter-sensitive traffic. |
 | **Bandwidth Utilization** | $\frac{\text{Delivered Bits}}{\text{Capacity (bps)} \times \text{Duration (s)}} \times 100\%$ | Percentage of total available link capacity utilized. |
 | **Jain's Fairness Index** | $\frac{\left(\sum_{i=1}^n x_i\right)^2}{n \sum_{i=1}^n x_i^2}$ | Evaluates throughput fairness among all $n$ users ($1/n \le J \le 1.0$). |
-
----
-
-## 🎓 Viva / Oral Exam Explanations
-
-### Q1: What is the difference between Equal Allocation and Round-Robin?
-- **Equal Allocation (Fair-Share Service)** divides the available **byte capacity** evenly among active users in each time step.
-- **Round-Robin** gives users **equal turns** to transmit packets or quanta. If packet sizes differ significantly (e.g., small 200B voice packets vs. large 1400B download packets), simple packet round-robin favors flows with larger packets in terms of raw throughput.
-
-### Q2: Why does Strict Priority cause starvation under heavy congestion?
-- Strict Priority always transmits from the highest-priority queue as long as packets are available.
-- Under heavy load (>100% capacity), high-priority real-time packets (Voice, Video) consume the full link bandwidth. Low-priority queues (bulk downloads) never get scheduled, their queues reach the buffer limit, and packets are dropped.
-- *Remedy in production networks*: Weighted Fair Queuing (WFQ) or combining priority with token-bucket rate limiters.
-
-### Q3: How is packet conservation verified?
-At the end of the simulation, the engine asserts that:
-$$\text{Generated} = \text{Delivered} + \text{Dropped} + \text{Remaining in Queue}$$
-Every packet created by synthetic users is uniquely tracked by ID from arrival to delivery or drop.
 
 ---
 

@@ -13,7 +13,7 @@ from src.policies.equal_share import EqualSharePolicy
 from src.policies.priority import PrioritySchedulingPolicy
 from src.policies.round_robin import RoundRobinPolicy
 from src.metrics import compute_metrics
-from src.export import export_comparison_dataframe, export_user_dataframe, export_config_json
+from src.export import export_comparison_dataframe, export_user_dataframe
 
 # Set page configuration
 st.set_page_config(
@@ -189,12 +189,11 @@ st.info(
 )
 
 # Tabs for structured navigation
-tab_comp, tab_qos, tab_users, tab_queues, tab_export = st.tabs([
+tab_comp, tab_qos, tab_users, tab_queues = st.tabs([
     "📈 Policy Comparison",
     "🎯 QoS & Traffic Classes",
     "👥 Per-User Inspection",
     "📦 Queue & Conservation",
-    "📥 Export & Viva Guide",
 ])
 
 # ------------------------------------------
@@ -512,72 +511,4 @@ with tab_queues:
         "When arriving traffic exceeds transmission capacity, buffers fill up and tail-drops occur."
     )
 
-# ------------------------------------------
-# TAB 5: Export & Viva Guide
-# ------------------------------------------
-with tab_export:
-    st.subheader("Data Export")
-    col_exp1, col_exp2, col_exp3 = st.columns(3)
 
-    csv_comp = export_comparison_dataframe(sim_metrics).to_csv(index=False).encode("utf-8")
-    with col_exp1:
-        st.download_button(
-            "📥 Download Policy Summary (CSV)",
-            data=csv_comp,
-            file_name=f"network_policy_summary_seed{sim_config.seed}.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-
-    csv_users = export_user_dataframe(sim_metrics).to_csv(index=False).encode("utf-8")
-    with col_exp2:
-        st.download_button(
-            "📥 Download Per-User Data (CSV)",
-            data=csv_users,
-            file_name=f"network_user_metrics_seed{sim_config.seed}.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-
-    json_cfg = export_config_json(sim_config).encode("utf-8")
-    with col_exp3:
-        st.download_button(
-            "📥 Download Config Metadata (JSON)",
-            data=json_cfg,
-            file_name=f"sim_config_seed{sim_config.seed}.json",
-            mime="application/json",
-            use_container_width=True,
-        )
-
-    st.divider()
-    st.subheader("🎓 Student Viva / Oral Exam Quick Reference")
-
-    with st.expander("❓ 1. What is the fundamental difference between Equal Share and Round-Robin?"):
-        st.markdown("""
-        - **Equal Share (Fair-Share Service)** allocates an equal **bandwidth budget** (bytes/bits per second) among all active users in each scheduling interval.
-        - **Round-Robin** allocates **transmission opportunities** (turns to dequeue 1 packet or a quantum) by rotating cyclically through active user queues.
-        - *Key difference*: If packet sizes vary greatly (e.g. 200B voice vs 1400B download), simple packet round-robin gives equal turns, which favors users with large packets in terms of throughput. Equal allocation equalizes byte transmission capacity directly.
-        """)
-
-    with st.expander("❓ 2. Why does Strict Priority cause starvation under heavy congestion?"):
-        st.markdown("""
-        - **Strict Priority** always serves High-priority queues first whenever packets are present.
-        - Under heavy congestion (offered load > 100%), if high-priority voice/video streams generate enough traffic to fill the link capacity, Low-priority download queues never get served. Their buffers overflow and they suffer high loss and starvation.
-        - In real-world networks, this is mitigated by combining priority with rate limiters (e.g. Token Bucket / Weighted Fair Queuing).
-        """)
-
-    with st.expander("❓ 3. How is Jain's Fairness Index calculated and interpreted?"):
-        st.markdown("""
-        - Formula:
-          $$J(x_1, x_2, \\dots, x_n) = \\frac{\\left(\\sum_{i=1}^n x_i\\right)^2}{n \\cdot \\sum_{i=1}^n x_i^2}$$
-        - **Range**: From $1/n$ (worst case: one user monopolizes all bandwidth while all other $n-1$ users receive zero) to $1.0$ (perfect fairness: all users receive identical throughput).
-        - It is bounded, continuous, scale-independent, and penalizes starvation severely.
-        """)
-
-    with st.expander("❓ 4. Why is discrete-time simulation appropriate here?"):
-        st.markdown("""
-        - In discrete-time simulation, time advances in fixed increments ($dt = 10\\text{ ms}$).
-        - In each interval, the bottleneck link's physical transmission limit is strictly enforced:
-          $$\\text{Budget (bits)} = \\text{Capacity (bps)} \\times dt$$
-        - This guarantees that the simulator never transmits more bits than the physical line speed allows.
-        """)
